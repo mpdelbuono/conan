@@ -2,6 +2,7 @@
 import subprocess
 import json
 import uuid
+import os
 from conans.errors import ConanException
 from conans import CMake
 
@@ -228,9 +229,37 @@ class CMakeServer(CMake):
         # Generate
         self._issue_command_and_await_reply({"type": "compute"}, required=True)
 
+    def extract_info(self):
+        """Acquires the code model from CMake and returns it as an array of dictionaries. 
+           All data from the code model is provided. See the CMake Server documentation 
+           on message type 'codemodel' for details on what may be available in each 
+           configuration object."""
+        result = self._issue_command_and_await_reply({"type": "codemodel"}, required=True)
+        return result["configurations"]
 
+    def extract_artifacts(self, *filetypes):
+        """Gets the output artifacts for the current specified build type as an array of
+           filenames. If one or more filetypes are specified, only files matching the
+           specified filetype will be returned."""
+        skip_type_check = (len(filetypes) == 0)
+        
+        # Grab the artifacts
+        artifacts = []
+        for configuration in self.extract_info():
+            # Filter by build type if appropriate
+            if (self._build_type is None) or (configuration["name"] == self._build_type):
+                # Check all projects
+                for project in configuration["projects"]:
+                    # Check all targets
+                    for target in project["targets"]:
+                        # Get the list of artifacts
+                        if target.has_key("artifacts"):
+                            for artifact in target["artifacts"]:
+                                _, extension = os.path.splitext(artifact)
+                                if skip_type_check or (extension in filetypes):
+                                    artifacts.append(artifact)
 
-
+        return artifacts
 
     def _raise_if_error(self, result):
         """Checks the specified CMake result object to see if it is an error. If it is,
