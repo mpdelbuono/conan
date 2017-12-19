@@ -7,7 +7,7 @@ import uuid
 from conans.errors import ConanException, NotFoundException
 from conans.model.conan_file import ConanFile
 from conans.util.config_parser import ConfigParser
-from conans.tools import chdir
+from conans.tools import chdir, load_source
 from conans.client.generators import registered_generators
 from conans.model import Generator
 
@@ -62,7 +62,7 @@ def _parse_file(conan_file_path):
         old_modules = list(sys.modules.keys())
         with chdir(current_dir):
             sys.dont_write_bytecode = True
-            loaded = imp.load_source(filename, conan_file_path)
+            loaded = load_source(filename, conan_file_path)
             sys.dont_write_bytecode = False
         # Put all imported files under a new package name
         module_id = uuid.uuid1()

@@ -2,12 +2,15 @@ import os
 
 from six.moves.configparser import ConfigParser, NoSectionError
 from six.moves import urllib
+import six
 
 from conans.errors import ConanException
 from conans.model.env_info import unquote
 from conans.paths import conan_expand_user, DEFAULT_PROFILE_NAME
 from conans.util.env_reader import get_env
 from conans.util.files import load
+from conans import tools
+from io import open
 
 MIN_SERVER_COMPATIBLE_VERSION = '0.12.0'
 
@@ -132,7 +135,8 @@ class ConanClientConfigParser(ConfigParser, object):
 
     def __init__(self, filename):
         ConfigParser.__init__(self)
-        self.read(filename)
+        with open(filename, encoding="utf8") as f:
+            self.readfp(f, filename)
         self.filename = filename
 
     # So keys are not converted to lowercase, we override the default optionxform
